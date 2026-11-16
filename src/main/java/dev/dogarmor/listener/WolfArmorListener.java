@@ -38,13 +38,15 @@ public final class WolfArmorListener implements Listener {
         if (!(event.getRightClicked() instanceof Wolf wolf)) {
             return;
         }
-        DogArmorTier candidate = tierManager.candidateFor(materialOf(event.getItem()));
+        Player player = event.getPlayer();
+        // PlayerInteractEntityEvent has no getItem(): the held item comes from
+        // the player's own inventory for the hand that was used.
+        DogArmorTier candidate = tierManager.candidateFor(materialOf(player.getInventory().getItem(event.getHand())));
         if (candidate == null) {
             return; // Not holding an upgrade material - leave vanilla behaviour alone.
         }
         event.setCancelled(true);
 
-        Player player = event.getPlayer();
         if (!player.hasPermission("dogarmor.use")) {
             messages.send(player, "no-permission");
             return;

@@ -55,15 +55,17 @@ public final class TierManager {
                 throw new IllegalArgumentException("A tier entry is missing its 'key'");
             }
             String key = String.valueOf(rawKey).trim();
-            String displayName = String.valueOf(entry.getOrDefault("display-name", key));
+            // A Map<?, ?> cannot take a String default in getOrDefault, so each
+            // value is read and defaulted through string(...) instead.
+            String displayName = string(entry, "display-name", key);
             List<String> loreStrings = entry.get("lore") instanceof List<?> list
                     ? castStringList(list)
                     : List.of();
             int durability = toInt(entry.get("durability"), VANILLA_WOLF_ARMOR_MAX_DAMAGE);
-            Material material = parseMaterial(String.valueOf(entry.getOrDefault("upgrade-material", "NONE")));
+            Material material = parseMaterial(string(entry, "upgrade-material", "NONE"));
             int cost = toInt(entry.get("upgrade-cost"), 0);
-            ItemRarity rarity = parseRarity(String.valueOf(entry.getOrDefault("rarity", "COMMON")));
-            boolean glint = Boolean.parseBoolean(String.valueOf(entry.getOrDefault("glint", "false")));
+            ItemRarity rarity = parseRarity(string(entry, "rarity", "COMMON"));
+            boolean glint = toBoolean(entry.get("glint"));
             Map<Enchantment, Integer> enchantments = parseEnchantments(entry.get("enchantments"), key);
 
             List<Component> lore = loreStrings.stream().map(miniMessage::deserialize).toList();
@@ -171,6 +173,20 @@ public final class TierManager {
         } catch (NumberFormatException ignored) {
             return fallback;
         }
+    }
+
+    /** A config value as trimmed text, with a fallback when it is absent or blank. */
+    private static String string(Map<?, ?> entry, String name, String fallback) {
+        Object value = entry.get(name);
+        if (value == null) {
+            return fallback;
+        }
+        String text = String.valueOf(value).trim();
+        return text.isEmpty() ? fallback : text;
+    }
+
+    private static boolean toBoolean(@Nullable Object value) {
+        return value != null && Boolean.parseBoolean(String.valueOf(value).trim());
     }
 
     private static @Nullable Material parseMaterial(String name) {
