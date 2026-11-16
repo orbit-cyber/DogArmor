@@ -66,7 +66,8 @@ Requires **Java 25** and **Gradle 9+** (or an IDE with the Gradle integration):
 gradle build
 ```
 
-The plugin jar lands in `build/libs/DogArmor-1.0.0.jar`. Drop it into your
+The plugin jar lands in `build/libs/DogArmor-1.1.0.jar` (the version comes from
+`build.gradle.kts`, which also fills it into `plugin.yml`). Drop it into your
 server's `plugins/` folder and restart. Paper 26.3 is resolved from the
 PaperMC repository at build time.
 

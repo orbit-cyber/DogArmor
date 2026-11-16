@@ -1,5 +1,7 @@
 name: DogArmor
-version: 1.0.0
+# Filled in by processResources from build.gradle.kts, so the version is
+# written in exactly one place.
+version: '${version}'
 main: dev.dogarmor.DogArmorPlugin
 api-version: '26.3'
 description: Upgradable dog armour - upgrade your dog's wolf armour through copper, iron, gold, diamond and netherite tiers.

@@ -64,18 +64,23 @@ jobs:
           path: dist
 
       - name: Give the jar its stable name
+        id: package
         run: |
           mkdir -p out
-          cp dist/DogArmor-*.jar out/DogArmor.jar
+          jar=$(ls dist/DogArmor-*.jar | head -n 1)
+          version=$(basename "$jar" .jar | sed 's/^DogArmor-//')
+          cp "$jar" out/DogArmor.jar
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           ls -l out
 
       - name: Publish the latest release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: Latest build
+          name: Latest build (v${{ steps.package.outputs.version }})
           body: |
-            Automatically built from the newest commit on `main`.
+            DogArmor v${{ steps.package.outputs.version }} - automatically built
+            from the newest commit on `main`.
 
             Download `DogArmor.jar` below and drop it into your server's
             `plugins/` folder, then restart.
