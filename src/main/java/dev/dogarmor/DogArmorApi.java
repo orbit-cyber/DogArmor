@@ -19,6 +19,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Wolf;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -233,6 +234,37 @@ public final class DogArmorApi {
                 return "That dog is not wearing armour.";
             }
             equip(wolf, new ItemStack(Material.AIR));
+            return null;
+        }, "The server did not answer.");
+    }
+
+    /**
+     * Hands a tier's armour item to an online player, the way {@code /dogarmor give}
+     * does, so staff can do it without being in the game.
+     *
+     * <p>What does not fit in the inventory is dropped at the player's feet rather
+     * than lost. The player has to be online: an item cannot be put into an
+     * inventory that is not loaded.
+     */
+    public String give(String playerId, String tierKey) {
+        DogArmorTier tier = tierManager.byKey(tierKey == null ? "" : tierKey.trim());
+        if (tier == null) {
+            return "There is no armour tier called '" + tierKey + "' on this server.";
+        }
+        UUID id = parse(playerId);
+        if (id == null) {
+            return "That is not a player the panel can find.";
+        }
+        return onMain(() -> {
+            Player player = Bukkit.getPlayer(id);
+            if (player == null || !player.isOnline()) {
+                return "They have to be online to be given armour.";
+            }
+            ItemStack item = tierManager.createItem(tier, null);
+            Map<Integer, ItemStack> leftover = player.getInventory().addItem(item);
+            for (ItemStack stack : leftover.values()) {
+                player.getWorld().dropItem(player.getLocation(), stack);
+            }
             return null;
         }, "The server did not answer.");
     }

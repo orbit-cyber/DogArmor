@@ -49,6 +49,7 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
             case "info" -> handleInfo(player);
             case "upgrade" -> handleUpgrade(player);
             case "remove" -> handleRemove(player);
+            case "list" -> handleList(player);
             case "give" -> handleGive(player, args);
             case "reload" -> handleReload(player);
             default -> handleInfo(player);
@@ -164,6 +165,43 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
         messages.send(player, "removed", Placeholder.component("tier", tier.displayName()));
     }
 
+    /**
+     * Prints the whole ladder, straight from config.yml, so a player can see what
+     * a tier costs without opening the README.
+     */
+    private void handleList(Player player) {
+        if (!player.hasPermission("dogarmor.use")) {
+            messages.send(player, "no-permission");
+            return;
+        }
+        List<DogArmorTier> tiers = tierManager.tiers();
+        if (tiers.isEmpty()) {
+            messages.send(player, "list-empty");
+            return;
+        }
+        messages.send(player, "list-header",
+                Placeholder.unparsed("count", String.valueOf(tiers.size())));
+        for (DogArmorTier tier : tiers) {
+            String enchantments = tier.enchantments().isEmpty() ? ""
+                    : " <dark_gray>[" + tier.enchantmentSummary() + "]";
+            // parsed(), not unparsed(): the bracket part carries MiniMessage of
+            // its own, and unparsed() would show the tags as literal text.
+            if (tier.hasUpgradeMaterial()) {
+                messages.sendRaw(player, "list-entry",
+                        Placeholder.component("tier", tier.displayName()),
+                        Placeholder.unparsed("durability", String.valueOf(tier.durability())),
+                        Placeholder.unparsed("amount", String.valueOf(tier.upgradeCost())),
+                        Placeholder.unparsed("material", WolfArmorListener.pretty(tier.upgradeMaterial())),
+                        Placeholder.parsed("enchantments", enchantments));
+            } else {
+                messages.sendRaw(player, "list-entry-base",
+                        Placeholder.component("tier", tier.displayName()),
+                        Placeholder.unparsed("durability", String.valueOf(tier.durability())),
+                        Placeholder.parsed("enchantments", enchantments));
+            }
+        }
+    }
+
     private void handleGive(Player player, String[] args) {
         if (!player.hasPermission("dogarmor.admin")) {
             messages.send(player, "no-permission");
@@ -206,7 +244,7 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1) {
-            List<String> subs = new java.util.ArrayList<>(List.of("info", "upgrade", "remove"));
+            List<String> subs = new java.util.ArrayList<>(List.of("info", "upgrade", "remove", "list"));
             if (sender.hasPermission("dogarmor.admin")) {
                 subs.add("give");
                 subs.add("reload");

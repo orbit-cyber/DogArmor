@@ -48,6 +48,7 @@ every push and republishes it.
 - `/dogarmor info` - look at a dog and see its armour tier and durability.
 - `/dogarmor upgrade` - upgrade the dog you are looking at (materials from your inventory).
 - `/dogarmor remove` - take the armour off the dog you are looking at and keep the item.
+- `/dogarmor list` - show every tier, its durability and what the next upgrade costs.
 - `/dogarmor give <tier>` - admin: get a tier's armour item (`leather`, `copper`, `iron`, `golden`, `diamond`, `netherite`).
 - `/dogarmor reload` - admin: reload `config.yml`.
 
@@ -110,6 +111,57 @@ Mending is handled by `MendingListener`: it listens for the owner's
 `PlayerExpChangeEvent`, finds the owner's tamed dogs within `mending.range`,
 and turns the collected experience into durability on any piece that has
 Mending, removing the experience that was spent.
+
+## Plugin API
+
+Another plugin on the same server can read and change dog armour through
+`dev.dogarmor.DogArmorApi` - it exists so a web staff panel can list dogs and
+change their armour without a staff member typing a command in game.
+
+```java
+DogArmorApi api = DogArmorApi.get();   // null while DogArmor is disabled
+if (api == null) {
+    return;                            // say "not installed", do not crash
+}
+
+List<Map<String, Object>> tiers = api.tiers();
+List<Map<String, Object>> dogs = api.dogs();
+```
+
+**Reading**
+
+- `tiers()` - every tier in upgrade order: `key`, `displayName` (plain text),
+  `durability`, `upgradeMaterial` (readable, empty for the base tier),
+  `upgradeCost`, `rarity`, `enchantments` (readable, e.g. `Mending I, Unbreaking III`).
+- `dogs()` - every **loaded** tamed wolf: `id`, `name`, `owner`, `ownerName`,
+  `world`, `health`, `armor` (boolean), `tier`, `tierName`, `durability` (left)
+  and `maxDurability`. A dog in an unloaded chunk is not listed: nothing can be
+  said about it, and guessing what it wears would be worse than omitting it.
+
+**Changing**
+
+- `setTier(dogId, tierKey)` - puts that tier's armour on the dog, keeping only
+  the dye colour it had.
+- `repair(dogId)` - back to full durability.
+- `remove(dogId)` - takes the armour off. The item is not given to anyone.
+- `give(playerId, tierKey)` - hands a player a tier's armour item; the player
+  must be online. What does not fit is dropped at their feet.
+- `reload()` - re-reads `config.yml`.
+
+Each changing method returns `null` on success, or a sentence to show the user.
+Nothing throws.
+
+**Three rules hold this together, and should survive any change to it:**
+
+- **Plain types only.** Results are maps and lists of strings, numbers and
+  booleans. The caller is a different plugin in a different class loader, so
+  handing it DogArmor's own classes would break the moment the two jars
+  disagree about a field. `java.util` types are shared, so they always work.
+- **The main thread decides.** Every call can arrive from a web thread, and no
+  wolf, item or config may be touched from there, so the work is marshalled onto
+  the server thread and waited for, with a five second cap.
+- **Nothing throws.** A failure comes back as a sentence a staff member can
+  read; a stack trace in a web request is useless.
 
 ## License
 

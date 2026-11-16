@@ -33,6 +33,12 @@ public final class Messages {
             Map.entry("upgraded", "<green>Armour upgraded to <tier><green>!"),
             Map.entry("removed", "<green>Removed <tier><green> and gave it to you."),
             Map.entry("given", "<green>Given <tier><green>."),
+            Map.entry("list-header", "<gray>Dog armour tiers (<count>):"),
+            Map.entry("list-empty", "<red>This server has no armour tiers configured."),
+            Map.entry("list-entry", "- <tier> <gray>(<durability> durability<gray>), upgrade: "
+                    + "<amount>x <material><enchantments>"),
+            Map.entry("list-entry-base", "- <tier> <gray>(<durability> durability<gray>), base tier"
+                    + "<enchantments>"),
             Map.entry("tier-not-found", "<red>Unknown armour tier '<input><red>'."),
             Map.entry("give-usage", "<red>Usage: /dogarmor give <tier>"),
             Map.entry("reloaded", "<green>Configuration reloaded."),
@@ -57,5 +63,15 @@ public final class Messages {
 
     public void send(CommandSender sender, String key, TagResolver... resolvers) {
         sender.sendMessage(get(key, resolvers));
+    }
+
+    /**
+     * Sends a message without the config prefix, for the lines of a multi-line
+     * listing, where repeating "[DogArmor]" on every line would only be noise.
+     */
+    public void sendRaw(CommandSender sender, String key, TagResolver... resolvers) {
+        String fallback = DEFAULTS.getOrDefault(key, "<red>Missing message: " + key);
+        String raw = plugin.getConfig().getString("messages." + key, fallback);
+        sender.sendMessage(miniMessage.deserialize(raw, resolvers));
     }
 }
