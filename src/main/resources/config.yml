@@ -1,0 +1,101 @@
+# DogArmor - upgradable dog armour
+#
+# Tiers are an ordered list. The first tier is the plain vanilla
+# wolf armour, the last entry is the highest tier. A wolf's armour
+# is upgraded one tier at a time by right-clicking the tamed dog
+# while holding the tier's "upgrade-material" (or with /dogarmor upgrade).
+#
+# All tier benefits come from durability: wolf armour blocks damage
+# while it lasts, so higher tiers simply last much longer. On top of
+# that, a tier can carry its own "enchantments:" (diamond gets mending,
+# netherite gets unbreaking III).
+# Dye colour is kept when upgrading; enchantments are not - a tier item
+# carries exactly the enchantments listed for that tier.
+#
+# To add your own tiers, insert a new entry in the list with any
+# upgrade-material (a Bukkit Material name, e.g. EMERALD) and cost.
+
+tiers:
+  - key: leather
+    display-name: "<white>Leather Dog Armour"
+    lore:
+      - "<gray>Tier I"
+      - "<dark_gray>Handy scute-plated armour"
+    durability: 64
+    upgrade-material: NONE
+    upgrade-cost: 0
+    rarity: COMMON
+    glint: false
+  - key: copper
+    display-name: "<#B87333>Copper Dog Armour"
+    lore:
+      - "<gray>Tier II"
+      - "<dark_gray>Reinforced with copper ingots"
+    durability: 110
+    upgrade-material: COPPER_INGOT
+    upgrade-cost: 4
+    rarity: COMMON
+    glint: false
+  - key: iron
+    display-name: "<white>Iron Dog Armour"
+    lore:
+      - "<gray>Tier III"
+      - "<dark_gray>Plated with iron"
+    durability: 160
+    upgrade-material: IRON_INGOT
+    upgrade-cost: 4
+    rarity: UNCOMMON
+    glint: false
+  - key: golden
+    display-name: "<gold>Golden Dog Armour"
+    lore:
+      - "<gray>Tier IV"
+      - "<dark_gray>Gilded and shiny"
+    durability: 200
+    upgrade-material: GOLD_INGOT
+    upgrade-cost: 4
+    rarity: RARE
+    glint: false
+  - key: diamond
+    display-name: "<aqua>Diamond Dog Armour"
+    lore:
+      - "<gray>Tier V"
+      - "<dark_gray>Hardened with diamonds"
+    durability: 300
+    upgrade-material: DIAMOND
+    upgrade-cost: 4
+    rarity: RARE
+    glint: false
+    enchantments:
+      mending: 1
+  - key: netherite
+    display-name: "<color:#5A4A46>Netherite Dog Armour"
+    lore:
+      - "<gray>Tier VI"
+      - "<dark_gray>Forged in the nether"
+    durability: 500
+    upgrade-material: NETHERITE_INGOT
+    upgrade-cost: 1
+    rarity: EPIC
+    glint: true
+    enchantments:
+      mending: 1
+      unbreaking: 3
+
+messages:
+  prefix: "<gray>[<aqua>DogArmor<gray>] "
+  no-permission: "<red>You don't have permission to do that."
+  wolf-not-tamed: "<red>That wolf isn't tamed."
+  not-your-dog: "<red>You can only upgrade armour on your own dog."
+  no-wolf-looked-at: "<red>Look at a wolf to use this command."
+  no-armor: "<red>This dog isn't wearing armour. Equip a wolf armour item first."
+  must-upgrade-in-order: "<red>Upgrades go one tier at a time - this dog is wearing <tier><red>."
+  max-tier: "<green>This armour is already at the highest tier (<tier><green>)."
+  need: "<red>You need <amount>x <material><red> to upgrade this armour to <tier><red>."
+  upgraded: "<green>Armour upgraded to <tier><green>!"
+  given: "<green>Given <tier><green>."
+  tier-not-found: "<red>Unknown armour tier '<input><red>'."
+  give-usage: "<red>Usage: /dogarmor give <tier>"
+  reloaded: "<green>Configuration reloaded."
+  info: "This dog is wearing <tier> <gray>(durability <durability>)</gray><white>. Next upgrade: <amount>x <material><white>."
+  info-max: "This dog is wearing <tier> <gray>(durability <durability>)</gray><white> - max tier!"

@@ -80,7 +80,9 @@ public final class DogArmorApi {
      * <p>Each entry has: {@code key}, {@code displayName} (plain text, so the
      * panel does not have to understand MiniMessage), {@code durability} (the
      * tier's max damage, which is its whole benefit), {@code upgradeMaterial}
-     * (readable, empty for the base tier), {@code upgradeCost}, {@code rarity}.
+     * (readable, empty for the base tier), {@code upgradeCost}, {@code rarity}
+     * and {@code enchantments} (readable, e.g. "Mending I, Unbreaking III",
+     * empty for a tier with none).
      */
     public List<Map<String, Object>> tiers() {
         return onMain(this::tierSnapshot, new ArrayList<>());
@@ -97,6 +99,7 @@ public final class DogArmorApi {
                     ? "" : pretty(tier.upgradeMaterial()));
             entry.put("upgradeCost", tier.upgradeCost());
             entry.put("rarity", tier.rarity().name());
+            entry.put("enchantments", tier.enchantmentSummary());
             out.add(entry);
         }
         return out;
@@ -170,7 +173,8 @@ public final class DogArmorApi {
 
     /**
      * Puts a tier's armour on a dog, keeping only the dye colour it had.
-     * Enchantments are not carried over.
+     * Enchantments are not carried over; the dog gets exactly the enchantments
+     * the tier itself grants.
      */
     public String setTier(String dogId, String tierKey) {
         DogArmorTier tier = tierManager.byKey(tierKey == null ? "" : tierKey.trim());

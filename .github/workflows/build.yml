@@ -1,0 +1,86 @@
+name: Build
+
+# Builds the plugin on every push and, for main, publishes the jar to a
+# rolling "latest" GitHub release. That release is what the stable download
+# link in README.md points at:
+#
+#   https://github.com/orbit-cyber/DogArmor/releases/latest/download/DogArmor.jar
+#
+# The jar is copied to that fixed name so the link survives version bumps.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+# A second push while a release is publishing would race for the same tag.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      # No Gradle wrapper in this repo, so the version is pinned here.
+      # Paper 26.3 needs Gradle 9+ for the Java 25 toolchain.
+      - name: Set up Gradle 9
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.1.0'
+          cache-provider: basic
+
+      - name: Build
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: DogArmor
+          path: build/libs/*.jar
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download built jar
+        uses: actions/download-artifact@v4
+        with:
+          name: DogArmor
+          path: dist
+
+      - name: Give the jar its stable name
+        run: |
+          mkdir -p out
+          cp dist/DogArmor-*.jar out/DogArmor.jar
+          ls -l out
+
+      - name: Publish the latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          body: |
+            Automatically built from the newest commit on `main`.
+
+            Download `DogArmor.jar` below and drop it into your server's
+            `plugins/` folder, then restart.
+
+            Built from commit ${{ github.sha }}.
+          files: out/DogArmor.jar
+          make_latest: true
+          fail_on_unmatched_files: true

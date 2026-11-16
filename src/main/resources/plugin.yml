@@ -1,0 +1,17 @@
+name: DogArmor
+version: 1.0.0
+main: dev.dogarmor.DogArmorPlugin
+api-version: '26.3'
+description: Upgradable dog armour - upgrade your dog's wolf armour through copper, iron, gold, diamond and netherite tiers.
+commands:
+  dogarmor:
+    description: Dog armour commands.
+    usage: /dogarmor [info|upgrade|give <tier>|reload]
+    aliases: [dog]
+permissions:
+  dogarmor.use:
+    description: Allows checking and upgrading dog armour.
+    default: true
+  dogarmor.admin:
+    description: Allows /dogarmor give, /dogarmor reload and upgrading other players' dogs.
+    default: op
