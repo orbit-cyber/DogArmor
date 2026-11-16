@@ -41,6 +41,15 @@ public final class Messages {
                     + "<enchantments>"),
             Map.entry("tier-not-found", "<red>Unknown armour tier '<input><red>'."),
             Map.entry("give-usage", "<red>Usage: /dogarmor give <tier>"),
+            Map.entry("usage", "<red>Usage: /dogarmor [info|upgrade|remove|list|give <tier>|reload]"),
+            Map.entry("player-only", "<red>That needs to be run in game by a player. "
+                    + "From the console you can use /dogarmor list and /dogarmor reload."),
+            Map.entry("reload-failed", "<red>Reload failed - the tier list in config.yml is invalid. "
+                    + "See the console for the reason; the tiers already loaded are unchanged."),
+            Map.entry("info-unreachable", "This dog is wearing <tier> <gray>(durability <durability>)"
+                    + "</gray><white>. The next tier has no upgrade material configured."),
+            Map.entry("upgrade-unreachable", "<red>The next tier (<next><red>) has no upgrade material "
+                    + "configured, so it cannot be reached - an admin needs to fix config.yml."),
             Map.entry("reloaded", "<green>Configuration reloaded."),
             Map.entry("info", "This dog is wearing <tier> <gray>(durability <durability>)</gray><white>. "
                     + "Next upgrade: <amount>x <material><white>."),

@@ -2,10 +2,12 @@ package dev.dogarmor.tier;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.RegistryAccess;
@@ -21,10 +23,10 @@ import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Wolf;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemRarity;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,8 +64,16 @@ public final class TierManager {
                     ? castStringList(list)
                     : List.of();
             int durability = toInt(entry.get("durability"), VANILLA_WOLF_ARMOR_MAX_DAMAGE);
+            if (durability < 1) {
+                throw new IllegalArgumentException("Tier '" + key + "' has durability " + durability
+                        + "; it must be 1 or more");
+            }
             Material material = parseMaterial(string(entry, "upgrade-material", "NONE"));
             int cost = toInt(entry.get("upgrade-cost"), 0);
+            if (material != null && cost < 1) {
+                throw new IllegalArgumentException("Tier '" + key + "' has an upgrade-material but an "
+                        + "upgrade-cost of " + cost + "; it must be 1 or more");
+            }
             ItemRarity rarity = parseRarity(string(entry, "rarity", "COMMON"));
             boolean glint = toBoolean(entry.get("glint"));
             Map<Enchantment, Integer> enchantments = parseEnchantments(entry.get("enchantments"), key);
@@ -72,7 +82,30 @@ public final class TierManager {
             parsed.add(new DogArmorTier(index++, key, miniMessage.deserialize(displayName), lore,
                     durability, material, cost, rarity, glint, enchantments));
         }
+        validateUnique(parsed);
         this.tiers = List.copyOf(parsed);
+    }
+
+    /**
+     * Rejects two tiers sharing a key or an upgrade material.
+     *
+     * <p>Both are silent breakage otherwise: a duplicate key makes
+     * {@code /dogarmor give} pick whichever comes first, and a duplicate material
+     * makes the later tier unreachable, because right-clicking always resolves to
+     * the first match.
+     */
+    private static void validateUnique(List<DogArmorTier> parsed) {
+        Set<String> keys = new HashSet<>();
+        Set<Material> materials = new HashSet<>();
+        for (DogArmorTier tier : parsed) {
+            if (!keys.add(tier.key().toLowerCase(Locale.ROOT))) {
+                throw new IllegalArgumentException("Two tiers share the key '" + tier.key() + "'");
+            }
+            if (tier.upgradeMaterial() != null && !materials.add(tier.upgradeMaterial())) {
+                throw new IllegalArgumentException("Two tiers upgrade with " + tier.upgradeMaterial()
+                        + " - the later one could never be reached");
+            }
+        }
     }
 
     public List<DogArmorTier> tiers() {
@@ -159,21 +192,18 @@ public final class TierManager {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key);
     }
 
-    /** The level of the named enchantment on an item, or 0 when it has none. */
-    public int enchantmentLevel(ItemStack item, String enchantmentName) {
-        Enchantment enchantment = enchantmentByName(enchantmentName);
-        if (enchantment == null || !item.containsEnchantment(enchantment)) {
-            return 0;
-        }
-        return item.getEnchantmentLevel(enchantment);
-    }
-
     public ItemStack createItem(DogArmorTier tier, @Nullable ItemStack oldArmor) {
         return tier.createItem(oldArmor, tierKey);
     }
 
     public void equip(Wolf wolf, DogArmorTier tier, @Nullable ItemStack oldArmor) {
-        wolf.getEquipment().setItem(EquipmentSlot.BODY, createItem(tier, oldArmor));
+        EntityEquipment equipment = wolf.getEquipment();
+        if (equipment == null) {
+            // A wolf always has equipment; guarding keeps a null from turning
+            // into an NPE in the middle of an upgrade that already took payment.
+            return;
+        }
+        equipment.setItem(EquipmentSlot.BODY, createItem(tier, oldArmor));
     }
 
     public void playUpgradeEffects(Wolf wolf) {
@@ -225,6 +255,11 @@ public final class TierManager {
         Material material = Material.matchMaterial(name);
         if (material == null) {
             throw new IllegalArgumentException("Unknown upgrade-material: " + name);
+        }
+        if (material.isAir()) {
+            // An air "material" would make hasUpgradeMaterial() true while the
+            // tier could never be reached: the empty hand yields no material.
+            throw new IllegalArgumentException("upgrade-material cannot be AIR; use NONE for no material");
         }
         return material;
     }

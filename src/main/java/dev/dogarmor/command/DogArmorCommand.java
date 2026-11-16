@@ -8,8 +8,6 @@ import dev.dogarmor.Messages;
 import dev.dogarmor.listener.WolfArmorListener;
 import dev.dogarmor.tier.DogArmorTier;
 import dev.dogarmor.tier.TierManager;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -39,20 +37,32 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("Only players can use this command.");
+        String sub = args.length == 0 ? "info" : args[0].toLowerCase(java.util.Locale.ROOT);
+
+        // These two need no player: an admin at the console must be able to
+        // reload, and the ladder can be read from anywhere.
+        if (sub.equals("reload")) {
+            handleReload(sender);
+            return true;
+        }
+        if (sub.equals("list")) {
+            handleList(sender);
             return true;
         }
 
-        String sub = args.length == 0 ? "info" : args[0].toLowerCase(java.util.Locale.ROOT);
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "player-only");
+            return true;
+        }
+
         switch (sub) {
             case "info" -> handleInfo(player);
             case "upgrade" -> handleUpgrade(player);
             case "remove" -> handleRemove(player);
-            case "list" -> handleList(player);
             case "give" -> handleGive(player, args);
-            case "reload" -> handleReload(player);
-            default -> handleInfo(player);
+            // An unknown subcommand used to run "info" silently, which looked
+            // like the command ignoring what was typed.
+            default -> messages.send(player, "usage");
         }
         return true;
     }
@@ -76,8 +86,14 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
         }
         String durability = tierManager.durabilityDisplay(armor);
         DogArmorTier next = tierManager.nextTier(tier.index());
-        if (next == null || !next.hasUpgradeMaterial()) {
+        if (next == null) {
             messages.send(player, "info-max",
+                    Placeholder.component("tier", tier.displayName()),
+                    Placeholder.unparsed("durability", durability));
+        } else if (!next.hasUpgradeMaterial()) {
+            // A next tier with no material is a config error, not "max tier":
+            // saying "max tier" here would be a lie the player cannot act on.
+            messages.send(player, "info-unreachable",
                     Placeholder.component("tier", tier.displayName()),
                     Placeholder.unparsed("durability", durability));
         } else {
@@ -117,8 +133,12 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
             return;
         }
         DogArmorTier next = tierManager.nextTier(current.index());
-        if (next == null || !next.hasUpgradeMaterial()) {
+        if (next == null) {
             messages.send(player, "max-tier", Placeholder.component("tier", current.displayName()));
+            return;
+        }
+        if (!next.hasUpgradeMaterial()) {
+            messages.send(player, "upgrade-unreachable", Placeholder.component("next", next.displayName()));
             return;
         }
         listener.tryUpgrade(player, wolf, armor, current, next);
@@ -169,17 +189,17 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
      * Prints the whole ladder, straight from config.yml, so a player can see what
      * a tier costs without opening the README.
      */
-    private void handleList(Player player) {
-        if (!player.hasPermission("dogarmor.use")) {
-            messages.send(player, "no-permission");
+    private void handleList(CommandSender sender) {
+        if (!sender.hasPermission("dogarmor.use")) {
+            messages.send(sender, "no-permission");
             return;
         }
         List<DogArmorTier> tiers = tierManager.tiers();
         if (tiers.isEmpty()) {
-            messages.send(player, "list-empty");
+            messages.send(sender, "list-empty");
             return;
         }
-        messages.send(player, "list-header",
+        messages.send(sender, "list-header",
                 Placeholder.unparsed("count", String.valueOf(tiers.size())));
         for (DogArmorTier tier : tiers) {
             String enchantments = tier.enchantments().isEmpty() ? ""
@@ -187,14 +207,14 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
             // parsed(), not unparsed(): the bracket part carries MiniMessage of
             // its own, and unparsed() would show the tags as literal text.
             if (tier.hasUpgradeMaterial()) {
-                messages.sendRaw(player, "list-entry",
+                messages.sendRaw(sender, "list-entry",
                         Placeholder.component("tier", tier.displayName()),
                         Placeholder.unparsed("durability", String.valueOf(tier.durability())),
                         Placeholder.unparsed("amount", String.valueOf(tier.upgradeCost())),
                         Placeholder.unparsed("material", WolfArmorListener.pretty(tier.upgradeMaterial())),
                         Placeholder.parsed("enchantments", enchantments));
             } else {
-                messages.sendRaw(player, "list-entry-base",
+                messages.sendRaw(sender, "list-entry-base",
                         Placeholder.component("tier", tier.displayName()),
                         Placeholder.unparsed("durability", String.valueOf(tier.durability())),
                         Placeholder.parsed("enchantments", enchantments));
@@ -224,17 +244,16 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
         messages.send(player, "given", Placeholder.component("tier", tier.displayName()));
     }
 
-    private void handleReload(Player player) {
-        if (!player.hasPermission("dogarmor.admin")) {
-            messages.send(player, "no-permission");
+    private void handleReload(CommandSender sender) {
+        if (!sender.hasPermission("dogarmor.admin")) {
+            messages.send(sender, "no-permission");
             return;
         }
         if (!plugin.reloadAll()) {
-            player.sendMessage(Component.text(
-                    "Reload failed: the tier list in config.yml is invalid, see the console.", NamedTextColor.RED));
+            messages.send(sender, "reload-failed");
             return;
         }
-        messages.send(player, "reloaded");
+        messages.send(sender, "reloaded");
     }
 
     private @Nullable Wolf targetWolf(Player player) {

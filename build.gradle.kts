@@ -4,7 +4,7 @@ plugins {
 
 // The single source of the plugin's version: it names the jar and is expanded
 // into plugin.yml, so the server never reports a version the jar does not have.
-version = "1.1.0"
+version = "1.1.1"
 group = "dev.dogarmor"
 
 repositories {

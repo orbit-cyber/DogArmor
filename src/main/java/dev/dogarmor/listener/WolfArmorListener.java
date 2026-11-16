@@ -30,7 +30,7 @@ public final class WolfArmorListener implements Listener {
         this.messages = messages;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEntityEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) {
             return;
@@ -45,8 +45,10 @@ public final class WolfArmorListener implements Listener {
         if (candidate == null) {
             return; // Not holding an upgrade material - leave vanilla behaviour alone.
         }
-        event.setCancelled(true);
 
+        // The checks come before setCancelled(): a stranger holding an ingot must
+        // not have their click swallowed, and an untamed wolf must still behave
+        // like an untamed wolf.
         if (!player.hasPermission("dogarmor.use")) {
             messages.send(player, "no-permission");
             return;
@@ -59,6 +61,7 @@ public final class WolfArmorListener implements Listener {
             messages.send(player, "not-your-dog");
             return;
         }
+        event.setCancelled(true);
 
         ItemStack armor = wolf.getEquipment() == null ? null
                 : wolf.getEquipment().getItem(EquipmentSlot.BODY);
@@ -97,6 +100,16 @@ public final class WolfArmorListener implements Listener {
 
         Map<Integer, ItemStack> leftover = player.getInventory().removeItem(costStack);
         if (!leftover.isEmpty()) {
+            // removeItem() takes what it can and returns the rest. Anything it
+            // did take is given back here, so a partial removal never costs the
+            // player materials for an upgrade that did not happen.
+            int removed = cost;
+            for (ItemStack stack : leftover.values()) {
+                removed -= stack.getAmount();
+            }
+            if (removed > 0) {
+                player.getInventory().addItem(new ItemStack(material, removed));
+            }
             messages.send(player, "need",
                     Placeholder.unparsed("material", pretty(material)),
                     Placeholder.unparsed("amount", String.valueOf(cost)),

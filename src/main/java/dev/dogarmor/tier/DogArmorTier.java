@@ -52,22 +52,14 @@ public record DogArmorTier(
     public ItemStack createItem(@Nullable ItemStack oldArmor, NamespacedKey tierKey) {
         ItemStack item = new ItemStack(Material.WOLF_ARMOR);
 
-        item.setData(DataComponentTypes.MAX_DAMAGE, durability);
-        item.setData(DataComponentTypes.RARITY, rarity);
-        if (glint) {
-            item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
-        }
-
-        // Keep the dye colour of the armour being upgraded.
-        if (oldArmor != null && oldArmor.hasData(DataComponentTypes.DYED_COLOR)) {
-            item.setData(DataComponentTypes.DYED_COLOR, oldArmor.getData(DataComponentTypes.DYED_COLOR));
-        }
-
-        // Single meta snapshot taken after the components above, so writing it
-        // back cannot drop them. Enchantments of the old armour are deliberately
-        // not carried over: a tier item carries exactly the enchantments its own
-        // config entry lists, so diamond gets mending and netherite unbreaking
-        // without anything a lower tier happened to have.
+        // The meta is written FIRST and the data components LAST, deliberately.
+        // setItemMeta() replaces the item's whole component set with the meta's
+        // own, so a component written before it can be dropped - which would
+        // silently reset every tier's durability to the vanilla 64. Written
+        // after it, they cannot be lost.
+        //
+        // Enchantments of the old armour are deliberately not carried over: a
+        // tier item carries exactly the enchantments its own config entry lists.
         ItemMeta meta = item.getItemMeta();
         meta.displayName(displayName);
         meta.lore(lore);
@@ -77,6 +69,16 @@ public record DogArmorTier(
         // The marker that tells the plugin which tier this armour is.
         meta.getPersistentDataContainer().set(tierKey, PersistentDataType.INTEGER, index);
         item.setItemMeta(meta);
+
+        item.setData(DataComponentTypes.MAX_DAMAGE, durability);
+        item.setData(DataComponentTypes.RARITY, rarity);
+        if (glint) {
+            item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true);
+        }
+        // Keep the dye colour of the armour being upgraded.
+        if (oldArmor != null && oldArmor.hasData(DataComponentTypes.DYED_COLOR)) {
+            item.setData(DataComponentTypes.DYED_COLOR, oldArmor.getData(DataComponentTypes.DYED_COLOR));
+        }
         return item;
     }
 

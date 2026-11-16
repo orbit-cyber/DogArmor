@@ -5,6 +5,7 @@ import dev.dogarmor.tier.TierManager;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wolf;
@@ -13,6 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Makes Mending on dog armour mean something.
@@ -29,14 +31,20 @@ public final class MendingListener implements Listener {
     private static final String MENDING = "mending";
 
     private final DogArmorPlugin plugin;
-    private final TierManager tierManager;
 
-    public MendingListener(DogArmorPlugin plugin, TierManager tierManager) {
+    /**
+     * Resolved once. This runs on every experience orb a player picks up, and a
+     * registry lookup per orb is pure waste; the enchantment registry cannot
+     * change while the server runs.
+     */
+    private @Nullable Enchantment mending;
+    private boolean mendingResolved;
+
+    public MendingListener(DogArmorPlugin plugin) {
         this.plugin = plugin;
-        this.tierManager = tierManager;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onExperienceGain(PlayerExpChangeEvent event) {
         if (!plugin.getConfig().getBoolean("mending.enabled", true)) {
             return;
@@ -80,7 +88,7 @@ public final class MendingListener implements Listener {
         if (armor == null || armor.getType() != Material.WOLF_ARMOR) {
             return available;
         }
-        if (tierManager.enchantmentLevel(armor, MENDING) <= 0) {
+        if (mendingLevel(armor) <= 0) {
             return available;
         }
         int damage = armor.getDataOrDefault(DataComponentTypes.DAMAGE, 0);
@@ -98,5 +106,17 @@ public final class MendingListener implements Listener {
         wolf.getWorld().spawnParticle(Particle.HAPPY_VILLAGER,
                 wolf.getLocation().add(0, 1, 0), 3, 0.2, 0.3, 0.2, 0);
         return available - spent;
+    }
+
+    /** The Mending level on an item, or 0 when it has none. */
+    private int mendingLevel(ItemStack item) {
+        if (!mendingResolved) {
+            mending = TierManager.enchantmentByName(MENDING);
+            mendingResolved = true;
+        }
+        if (mending == null || !item.containsEnchantment(mending)) {
+            return 0;
+        }
+        return item.getEnchantmentLevel(mending);
     }
 }

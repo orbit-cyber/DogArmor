@@ -52,7 +52,7 @@ every push and republishes it.
 - `/dogarmor give <tier>` - admin: get a tier's armour item (`leather`, `copper`, `iron`, `golden`, `diamond`, `netherite`).
 - `/dogarmor reload` - admin: reload `config.yml`.
 
-Aliases: `/dog`.
+Aliases: `/dog`. `list` and `reload` also work from the server console.
 
 **Permissions:** `dogarmor.use` (default: everyone) to check/upgrade your own
 dogs; `dogarmor.admin` (default: operators) for `give`, `reload` and other
@@ -66,7 +66,7 @@ Requires **Java 25** and **Gradle 9+** (or an IDE with the Gradle integration):
 gradle build
 ```
 
-The plugin jar lands in `build/libs/DogArmor-1.1.0.jar` (the version comes from
+The plugin jar lands in `build/libs/DogArmor-1.1.1.jar` (the version comes from
 `build.gradle.kts`, which also fills it into `plugin.yml`). Drop it into your
 server's `plugins/` folder and restart. Paper 26.3 is resolved from the
 PaperMC repository at build time.
@@ -97,7 +97,16 @@ There is also a `mending:` section outside the tier list:
 
 To add a tier, insert a new entry into the list, e.g. an emerald tier between
 gold and diamond with `upgrade-material: EMERALD`. Messages are also fully
-configurable under `messages:`.
+configurable under `messages:`, and every message has the same text built into
+the plugin, so a key you delete - or one added by a newer version while your old
+config stays in place - still reads sensibly.
+
+The tier list is validated on load, and an invalid one is refused with a console
+error rather than half-loading: a `durability` below 1, an `upgrade-cost` below 1
+on a tier that has a material, `upgrade-material: AIR`, an unknown material or
+enchantment, two tiers sharing a `key`, and two tiers upgrading with the same
+material are all rejected. The last one matters because right-clicking resolves
+to the first matching tier, so a duplicate would make the later tier unreachable.
 
 ## How it works
 

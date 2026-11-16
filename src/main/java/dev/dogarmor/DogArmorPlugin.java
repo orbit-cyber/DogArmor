@@ -12,25 +12,26 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class DogArmorPlugin extends JavaPlugin {
 
     private TierManager tierManager;
-    private Messages messages;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
-        messages = new Messages(this);
+        Messages messages = new Messages(this);
         tierManager = new TierManager(new NamespacedKey(this, "tier"));
         try {
             tierManager.load(getConfig());
         } catch (Exception exception) {
             getLogger().log(Level.SEVERE, "Failed to load tiers from config.yml: " + exception.getMessage());
+            getLogger().log(Level.SEVERE, "No armour tiers are loaded, so no dog can be upgraded. "
+                    + "Fix config.yml and run /dogarmor reload.");
         }
 
         WolfArmorListener listener = new WolfArmorListener(tierManager, messages);
         getServer().getPluginManager().registerEvents(listener, this);
         // Mending on diamond and netherite armour would otherwise never repair
         // anything, because a dog does not collect experience.
-        getServer().getPluginManager().registerEvents(new MendingListener(this, tierManager), this);
+        getServer().getPluginManager().registerEvents(new MendingListener(this), this);
 
         DogArmorCommand command = new DogArmorCommand(this, tierManager, messages, listener);
         PluginCommand pluginCommand = getCommand("dogarmor");
@@ -53,8 +54,11 @@ public final class DogArmorPlugin extends JavaPlugin {
 
     /** Reloads config.yml and the tier list; false when the tier list is invalid. */
     public boolean reloadAll() {
-        reloadConfig();
         try {
+            // reloadConfig() reads the file, so it belongs inside the try: a
+            // broken YAML file must come back as false, not as an exception
+            // thrown into the command that called this.
+            reloadConfig();
             tierManager.load(getConfig());
             return true;
         } catch (Exception exception) {

@@ -14,10 +14,13 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A second push while a release is publishing would race for the same tag.
+# A second push while a release is publishing would race for the same tag, so
+# runs on a branch replace each other. Pull request runs are cancelled freely;
+# a branch run that is already publishing the release is left to finish, because
+# cancelling it mid-upload could leave the release without its jar.
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
