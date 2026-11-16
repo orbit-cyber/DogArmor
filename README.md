@@ -91,9 +91,3 @@ components: `MAX_DAMAGE` (the tier durability), `RARITY`,
 `ENCHANTMENT_GLINT_OVERRIDE`, the tier's enchantments, plus a persistent
 `dogarmor:tier` marker so the plugin knows which tier a dog is wearing. Tiers
 can only be applied in order, one upgrade at a time.
-
-
-## Download
-
-**[Latest DogArmor.jar](https://github.com/orbit-cyber/DogArmor/releases/latest/download/DogArmor.jar)**
-- always the newest build from `main`.
