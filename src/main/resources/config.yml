@@ -92,6 +92,9 @@ mending:
   # Durability restored per experience point spent, the vanilla rate.
   durability-per-experience: 2
 
+# Every message below has the same text built into the plugin, so a key you
+# delete (or one added in a newer version) still reads sensibly. Set it here to
+# change it.
 messages:
   prefix: "<gray>[<aqua>DogArmor<gray>] "
   no-permission: "<red>You don't have permission to do that."
