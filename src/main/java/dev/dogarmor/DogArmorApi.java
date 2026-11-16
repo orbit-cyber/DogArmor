@@ -178,9 +178,10 @@ public final class DogArmorApi {
      * the tier itself grants.
      */
     public String setTier(String dogId, String tierKey) {
-        DogArmorTier tier = tierManager.byKey(tierKey == null ? "" : tierKey.trim());
+        String wanted = tierKey == null ? "" : tierKey.trim();
+        DogArmorTier tier = tierManager.byKey(wanted);
         if (tier == null) {
-            return "There is no armour tier called '" + tierKey + "' on this server.";
+            return "There is no armour tier called '" + wanted + "' on this server.";
         }
         UUID id = parse(dogId);
         if (id == null) {
@@ -247,9 +248,10 @@ public final class DogArmorApi {
      * inventory that is not loaded.
      */
     public String give(String playerId, String tierKey) {
-        DogArmorTier tier = tierManager.byKey(tierKey == null ? "" : tierKey.trim());
+        String wanted = tierKey == null ? "" : tierKey.trim();
+        DogArmorTier tier = tierManager.byKey(wanted);
         if (tier == null) {
-            return "There is no armour tier called '" + tierKey + "' on this server.";
+            return "There is no armour tier called '" + wanted + "' on this server.";
         }
         UUID id = parse(playerId);
         if (id == null) {
