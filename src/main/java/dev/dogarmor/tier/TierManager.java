@@ -139,6 +139,35 @@ public final class TierManager {
         return (max - current) + "/" + max;
     }
 
+    /**
+     * Resolves an enchantment by the name used in config.yml ("mending",
+     * "minecraft:unbreaking"), or null when it does not exist.
+     */
+    public static @Nullable Enchantment enchantmentByName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        NamespacedKey key;
+        try {
+            key = NamespacedKey.fromString(name.trim().toLowerCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+        if (key == null) {
+            return null;
+        }
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key);
+    }
+
+    /** The level of the named enchantment on an item, or 0 when it has none. */
+    public int enchantmentLevel(ItemStack item, String enchantmentName) {
+        Enchantment enchantment = enchantmentByName(enchantmentName);
+        if (enchantment == null || !item.containsEnchantment(enchantment)) {
+            return 0;
+        }
+        return item.getEnchantmentLevel(enchantment);
+    }
+
     public ItemStack createItem(DogArmorTier tier, @Nullable ItemStack oldArmor) {
         return tier.createItem(oldArmor, tierKey);
     }
@@ -247,27 +276,11 @@ public final class TierManager {
         if (level <= 0) {
             return;
         }
-        Enchantment enchantment = parseEnchantment(name);
+        Enchantment enchantment = enchantmentByName(name);
         if (enchantment == null) {
             throw new IllegalArgumentException(
                     "Unknown enchantment '" + name + "' on tier '" + tierKey + "'");
         }
         out.put(enchantment, level);
-    }
-
-    private static @Nullable Enchantment parseEnchantment(String name) {
-        if (name == null || name.isBlank()) {
-            return null;
-        }
-        NamespacedKey key;
-        try {
-            key = NamespacedKey.fromString(name.trim().toLowerCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            return null;
-        }
-        if (key == null) {
-            return null;
-        }
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key);
     }
 }

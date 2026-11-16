@@ -82,6 +82,16 @@ tiers:
       mending: 1
       unbreaking: 3
 
+# Mending on diamond and netherite armour repairs the dog's armour from the
+# experience its owner picks up nearby - a dog never collects experience of
+# its own, so vanilla Mending would never do anything on a dog.
+mending:
+  enabled: true
+  # How far from the owner (in blocks) a dog can be and still be repaired.
+  range: 8.0
+  # Durability restored per experience point spent, the vanilla rate.
+  durability-per-experience: 2
+
 messages:
   prefix: "<gray>[<aqua>DogArmor<gray>] "
   no-permission: "<red>You don't have permission to do that."
@@ -93,6 +103,7 @@ messages:
   max-tier: "<green>This armour is already at the highest tier (<tier><green>)."
   need: "<red>You need <amount>x <material><red> to upgrade this armour to <tier><red>."
   upgraded: "<green>Armour upgraded to <tier><green>!"
+  removed: "<green>Removed <tier><green> and gave it to you."
   given: "<green>Given <tier><green>."
   tier-not-found: "<red>Unknown armour tier '<input><red>'."
   give-usage: "<red>Usage: /dogarmor give <tier>"

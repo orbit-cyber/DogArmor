@@ -15,6 +15,13 @@ for that tier in `config.yml`. Repairing with armadillo scutes, anvils and
 grinding work as in vanilla, because every tier item is still a wolf armour
 item.
 
+**Mending actually works here.** A dog never collects experience of its own, so
+vanilla Mending on wolf armour could never repair anything. DogArmor repairs a
+dog's armour from the experience its owner picks up while nearby, at the vanilla
+rate of 2 durability per point, and that experience is spent - the same trade a
+player makes wearing a Mending piece. Distance, rate and an on/off switch are
+under `mending:` in `config.yml`.
+
 ## Download
 
 Grab the ready-built plugin - no toolchain needed:
@@ -40,6 +47,7 @@ every push and republishes it.
 
 - `/dogarmor info` - look at a dog and see its armour tier and durability.
 - `/dogarmor upgrade` - upgrade the dog you are looking at (materials from your inventory).
+- `/dogarmor remove` - take the armour off the dog you are looking at and keep the item.
 - `/dogarmor give <tier>` - admin: get a tier's armour item (`leather`, `copper`, `iron`, `golden`, `diamond`, `netherite`).
 - `/dogarmor reload` - admin: reload `config.yml`.
 
@@ -79,6 +87,12 @@ first run) defines the tier list in order. Every entry supports:
   none; an unknown name fails the load with a console error rather than being
   skipped.
 
+There is also a `mending:` section outside the tier list:
+
+- `enabled` - whether owner experience repairs nearby dogs' Mending armour
+- `range` - how far from the owner (blocks) a dog can be and still be repaired
+- `durability-per-experience` - durability restored per experience point spent
+
 To add a tier, insert a new entry into the list, e.g. an emerald tier between
 gold and diamond with `upgrade-material: EMERALD`. Messages are also fully
 configurable under `messages:`.
@@ -91,3 +105,12 @@ components: `MAX_DAMAGE` (the tier durability), `RARITY`,
 `ENCHANTMENT_GLINT_OVERRIDE`, the tier's enchantments, plus a persistent
 `dogarmor:tier` marker so the plugin knows which tier a dog is wearing. Tiers
 can only be applied in order, one upgrade at a time.
+
+Mending is handled by `MendingListener`: it listens for the owner's
+`PlayerExpChangeEvent`, finds the owner's tamed dogs within `mending.range`,
+and turns the collected experience into durability on any piece that has
+Mending, removing the experience that was spent.
+
+## License
+
+MIT - see [LICENSE](LICENSE).

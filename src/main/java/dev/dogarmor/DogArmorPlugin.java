@@ -1,6 +1,7 @@
 package dev.dogarmor;
 
 import dev.dogarmor.command.DogArmorCommand;
+import dev.dogarmor.listener.MendingListener;
 import dev.dogarmor.listener.WolfArmorListener;
 import dev.dogarmor.tier.TierManager;
 import java.util.logging.Level;
@@ -27,6 +28,9 @@ public final class DogArmorPlugin extends JavaPlugin {
 
         WolfArmorListener listener = new WolfArmorListener(tierManager, messages);
         getServer().getPluginManager().registerEvents(listener, this);
+        // Mending on diamond and netherite armour would otherwise never repair
+        // anything, because a dog does not collect experience.
+        getServer().getPluginManager().registerEvents(new MendingListener(this, tierManager), this);
 
         DogArmorCommand command = new DogArmorCommand(this, tierManager, messages, listener);
         PluginCommand pluginCommand = getCommand("dogarmor");

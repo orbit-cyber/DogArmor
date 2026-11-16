@@ -11,6 +11,7 @@ import dev.dogarmor.tier.TierManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -47,6 +48,7 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "info" -> handleInfo(player);
             case "upgrade" -> handleUpgrade(player);
+            case "remove" -> handleRemove(player);
             case "give" -> handleGive(player, args);
             case "reload" -> handleReload(player);
             default -> handleInfo(player);
@@ -121,6 +123,47 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
         listener.tryUpgrade(player, wolf, armor, current, next);
     }
 
+    private void handleRemove(Player player) {
+        if (!player.hasPermission("dogarmor.use")) {
+            messages.send(player, "no-permission");
+            return;
+        }
+        Wolf wolf = targetWolf(player);
+        if (wolf == null) {
+            messages.send(player, "no-wolf-looked-at");
+            return;
+        }
+        if (!wolf.isTamed()) {
+            messages.send(player, "wolf-not-tamed");
+            return;
+        }
+        if (!(wolf.getOwner() instanceof Player owner) || !owner.getUniqueId().equals(player.getUniqueId())) {
+            if (!player.hasPermission("dogarmor.admin")) {
+                messages.send(player, "not-your-dog");
+                return;
+            }
+        }
+        ItemStack armor = wolf.getEquipment() == null ? null
+                : wolf.getEquipment().getItem(EquipmentSlot.BODY);
+        DogArmorTier tier = tierManager.tierOf(armor);
+        if (tier == null || armor == null) {
+            messages.send(player, "no-armor");
+            return;
+        }
+
+        // The armour goes to whoever asked for it, so an upgrade (or a dog being
+        // moved) never costs the item. Anything that will not fit is dropped.
+        ItemStack taken = armor.clone();
+        if (wolf.getEquipment() != null) {
+            wolf.getEquipment().setItem(EquipmentSlot.BODY, new ItemStack(Material.AIR));
+        }
+        Map<Integer, ItemStack> leftover = player.getInventory().addItem(taken);
+        if (!leftover.isEmpty()) {
+            leftover.values().forEach(stack -> player.getWorld().dropItem(player.getLocation(), stack));
+        }
+        messages.send(player, "removed", Placeholder.component("tier", tier.displayName()));
+    }
+
     private void handleGive(Player player, String[] args) {
         if (!player.hasPermission("dogarmor.admin")) {
             messages.send(player, "no-permission");
@@ -163,7 +206,7 @@ public final class DogArmorCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1) {
-            List<String> subs = new java.util.ArrayList<>(List.of("info", "upgrade"));
+            List<String> subs = new java.util.ArrayList<>(List.of("info", "upgrade", "remove"));
             if (sender.hasPermission("dogarmor.admin")) {
                 subs.add("give");
                 subs.add("reload");
