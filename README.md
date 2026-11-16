@@ -117,6 +117,12 @@ components: `MAX_DAMAGE` (the tier durability), `RARITY`,
 `dogarmor:tier` marker so the plugin knows which tier a dog is wearing. Tiers
 can only be applied in order, one upgrade at a time.
 
+One ordering rule matters when touching `DogArmorTier.createItem`: the item
+meta is written **first** and the data components **last**. `setItemMeta`
+replaces an item's whole component set with the meta's own, so a component
+written before it can be dropped - which would silently reset every tier's
+durability to the vanilla 64. Written after it, they cannot be lost.
+
 Mending is handled by `MendingListener`: it listens for the owner's
 `PlayerExpChangeEvent`, finds the owner's tamed dogs within `mending.range`,
 and turns the collected experience into durability on any piece that has
