@@ -44,7 +44,10 @@ public final class MendingListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // No ignoreCancelled here: PlayerExpChangeEvent is not Cancellable, and
+    // asking for it would make registerEvents throw and the plugin fail to
+    // enable. The event is adjusted through setAmount() instead.
+    @EventHandler
     public void onExperienceGain(PlayerExpChangeEvent event) {
         if (!plugin.getConfig().getBoolean("mending.enabled", true)) {
             return;
